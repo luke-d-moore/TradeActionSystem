@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeActionSystem", "TradeActionSystem\TradeActionSystem.csproj", "{11987932-F302-485E-9011-F18FCF17425E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11987932-F302-485E-9011-F18FCF17425E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11987932-F302-485E-9011-F18FCF17425E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11987932-F302-485E-9011-F18FCF17425E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11987932-F302-485E-9011-F18FCF17425E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6B79DD65-7615-4D89-B40F-A062AC86B70E}
+	EndGlobalSection
+EndGlobal
