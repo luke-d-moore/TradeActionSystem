@@ -38,30 +38,6 @@ namespace TradeActionSystem.Services
             }
             return 0m;
         }
-
-        public async Task<IDictionary<string, decimal>> GetPrices()
-        {
-            try
-            {
-                HttpClient client = new HttpClient();
-
-                using (HttpResponseMessage response = await client.GetAsync(_baseURL + "/GetAllPrices"))
-                {
-                    using (HttpContent content = response.Content)
-                    {
-                        var json = await content.ReadAsStringAsync();
-                        var responseObject = JsonSerializer.Deserialize<GetPriceResponse>(json);
-                        IDictionary<string, decimal> currentPrices = responseObject.Prices;
-                        return currentPrices ?? new Dictionary<string, decimal>();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetPrices Failed with the following exception message" + ex.Message);
-            }
-            return new Dictionary<string, decimal>();
-        }
         public async Task<IList<string>> GetTickers()
         {
             try

@@ -11,40 +11,53 @@ namespace TradeActionSystem.Services
         {
             _logger = logger;
             _pricingService = pricingService;
+            _tickers = new HashSet<string>();
         }
         private async Task<HashSet<string>> GetTickers()
         {
             return (await _pricingService.GetTickers()).ToHashSet();
         }
-        public async Task<decimal> Buy(string Ticker, int Quantity, decimal OriginalPrice, decimal CurrentPrice)
+        private async Task<bool> Validate(string Ticker, int Quantity, string Action)
         {
-            var tickers = await GetTickers();
+            if (!_tickers.Any()) _tickers = await GetTickers();
             if (!_tickers.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
             {
+                _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
                 throw new ArgumentException("Invalid Ticker", "ticker");
             }
             if (Quantity <= 0)
             {
+                _logger.LogError($"Invalid Quantity : {Quantity}, Action : {Action}");
                 throw new ArgumentOutOfRangeException("quantity", Quantity, "Quantity must be greater than 0.");
             }
 
-            var Difference = OriginalPrice - CurrentPrice; // for buy this is positive as original > current
+            return true;
+        }
+        public async Task<decimal> BuyAsync(string Ticker, int Quantity, decimal OriginalPrice)
+        {
+            if (!await Validate(Ticker, Quantity, nameof(BuyAsync))) return 0m;
+            var currentPrice = await _pricingService.GetPriceFromTicker(Ticker);
+            if (currentPrice == 0m)
+            {
+                _logger.LogError($"Failed To Get Current Price for Ticker {Ticker}, Action : {nameof(BuyAsync)}");
+                throw new Exception($"Failed To Get Current Price for Ticker {Ticker}");
+            }
+
+            var Difference = OriginalPrice - currentPrice; // for buy this is positive as original > current
 
             return Difference * Quantity;
         }
-        public async Task<decimal> Sell(string Ticker, int Quantity, decimal OriginalPrice, decimal CurrentPrice)
+        public async Task<decimal> SellAsync(string Ticker, int Quantity, decimal OriginalPrice)
         {
-            var tickers = await GetTickers();
-            if (!_tickers.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
+            if(!await Validate(Ticker, Quantity, nameof(SellAsync))) return 0m;
+            var currentPrice = await _pricingService.GetPriceFromTicker(Ticker);
+            if (currentPrice == 0m)
             {
-                throw new ArgumentException("Invalid Ticker", "ticker");
-            }
-            if (Quantity <= 0)
-            {
-                throw new ArgumentOutOfRangeException("quantity", Quantity, "Quantity must be greater than 0.");
+                _logger.LogError($"Failed To Get Current Price for Ticker {Ticker}, Action : {nameof(SellAsync)}");
+                throw new Exception($"Failed To Get Current Price for Ticker {Ticker}");
             }
 
-            var Difference = CurrentPrice - OriginalPrice; // for sell this is negative as original < current
+            var Difference = currentPrice - OriginalPrice; // for sell this is negative as original < current
 
             return Difference * Quantity;
         }

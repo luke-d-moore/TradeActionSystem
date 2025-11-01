@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Routing;
 
-namespace PricingSyetem.Controllers
+namespace TradeAction.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -20,50 +20,55 @@ namespace PricingSyetem.Controllers
             _tradeActionService = tradeActionService;
         }
 
-        //// GET: api/<PriceController>
-        //[HttpGet(nameof(GetPrice) + "/{ticker}")]
-        //[SwaggerOperation(nameof(GetPrice))]
-        //[SwaggerResponse(StatusCodes.Status200OK, "OK")]
-        //public async Task<IActionResult> GetPrice(string ticker)
-        //{
-        //    try
-        //    {
-        //        var price = await _pricingService.GetCurrentPrice(ticker);
-        //        var response = new GetPriceResponse(true, "Price Retrieved", new Dictionary<string, decimal>() { { ticker, price } });
-        //        return Ok(response);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Problem(
-        //            title: "Price Retrieve Failed",
-        //            detail: ex.Message,
-        //            statusCode: StatusCodes.Status404NotFound
-        //        );
-        //    }
-        //}
+        // GET: api/<PriceController>
+        [HttpGet(nameof(Buy))]
+        [SwaggerOperation(nameof(Buy))]
+        [SwaggerResponse(StatusCodes.Status200OK, "OK")]
+        public async Task<IActionResult> Buy()
+        {
+            try
+            {
+                //make a new request object to pass into the controller which we can take values from for use in the service call
+                var price = await _tradeActionService.BuyAsync("IBM",10,10);
+                //var response = new GetPriceResponse(true, "Price Retrieved", new Dictionary<string, decimal>() { { ticker, price } });
+                //return Ok(response);
+                //make new response object for this api call
+                return Ok(price);
+            }
+            catch (Exception ex)
+            {
+                return Problem(
+                    title: "Buy Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status404NotFound
+                );
+            }
+        }
 
-        //// GET: api/<PriceController>
-        //[HttpGet]
-        //[Route(nameof(GetAllPrices))]
-        //[SwaggerOperation(nameof(GetAllPrices))]
-        //[SwaggerResponse(StatusCodes.Status200OK, "OK")]
-        //public IActionResult GetAllPrices()
-        //{
-        //    var tickers = _pricingService.GetPrices();
-        //    var response = new GetPriceResponse(true, "Prices Retrieved", tickers);
-        //    return Ok(response);
-        //}
-
-        //// GET: api/<PriceController>
-        //[HttpGet]
-        //[Route(nameof(GetTickers))]
-        //[SwaggerOperation(nameof(GetTickers))]
-        //[SwaggerResponse(StatusCodes.Status200OK, "OK")]
-        //public IActionResult GetTickers()
-        //{
-        //    var tickers = _pricingService.GetTickers();
-        //    var response = new GetTickersResponse(true, "Tickers Retrieved", tickers);
-        //    return Ok(response);
-        //}
+        // GET: api/<PriceController>
+        [HttpGet]
+        [Route(nameof(Sell))]
+        [SwaggerOperation(nameof(Sell))]
+        [SwaggerResponse(StatusCodes.Status200OK, "OK")]
+        public async Task<IActionResult> Sell()
+        {
+            try
+            {
+                //make a new request object to pass into the controller which we can take values from for use in the service call
+                var price = await _tradeActionService.SellAsync("IBM", 10, 0);
+                //var response = new GetPriceResponse(true, "Price Retrieved", new Dictionary<string, decimal>() { { ticker, price } });
+                //return Ok(response);
+                //make new response object for this api call
+                return Ok(price);
+            }
+            catch (Exception ex)
+            {
+                return Problem(
+                    title: "Sell Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status404NotFound
+                );
+            }
+        }
     }
 }
