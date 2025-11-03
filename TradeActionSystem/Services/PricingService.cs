@@ -15,29 +15,6 @@ namespace TradeActionSystem.Services
             _configuration = configuration;
             _baseURL = _configuration["PricingSystemBaseURL"];
         }
-        public async Task<decimal> GetPriceFromTicker(string ticker)
-        {
-            try
-            {
-                HttpClient client = new HttpClient();
-
-                using (HttpResponseMessage response = await client.GetAsync(_baseURL + "/GetPrice/" + ticker))
-                {
-                    using (HttpContent content = response.Content)
-                    {
-                        var json = await content.ReadAsStringAsync();
-                        var responseObject = JsonSerializer.Deserialize<GetPriceResponse>(json);
-                        decimal? currentPrice = (responseObject?.Prices.Values.FirstOrDefault());
-                        return currentPrice.HasValue ? currentPrice.Value : 0m;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetPriceFromTicker Failed with the following exception message" + ex.Message);
-            }
-            return 0m;
-        }
         public async Task<IList<string>> GetTickers()
         {
             try

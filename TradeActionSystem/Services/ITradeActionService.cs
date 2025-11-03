@@ -2,8 +2,8 @@
 {
     public interface ITradeActionService
     {
-        public Task<decimal> SellAsync(string Ticker, int Quantity, decimal OriginalPrice);
-        public Task<decimal> BuyAsync(string Ticker, int Quantity, decimal OriginalPrice);
+        public Task<bool> SellAsync(string Ticker, int Quantity);
+        public Task<bool> BuyAsync(string Ticker, int Quantity);
 
     }
 }
