@@ -21,7 +21,7 @@ namespace TradeActionSystem.Services
             {
                 HttpClient client = new HttpClient();
 
-                using (HttpResponseMessage response = await client.GetAsync(_baseURL + "/GetTickers"))
+                using (HttpResponseMessage response = await client.GetAsync(_baseURL + "/GetTickers").ConfigureAwait(false))
                 {
                     using (HttpContent content = response.Content)
                     {
