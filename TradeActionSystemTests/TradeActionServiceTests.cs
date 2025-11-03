@@ -3,6 +3,7 @@ using TradeActionSystem.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Moq;
+using TradeActionSystem.Interfaces;
 
 namespace TradeActionServiceTests
 {

@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using System;
 using System.Text.Json;
+using TradeActionSystem.Interfaces;
 
 namespace TradeActionSystem.Services
 {

@@ -1,6 +1,7 @@
 using TradeActionSystem.Services;
 using Serilog;
 using TradeActionSystem.Logging;
+using TradeActionSystem.Interfaces;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
