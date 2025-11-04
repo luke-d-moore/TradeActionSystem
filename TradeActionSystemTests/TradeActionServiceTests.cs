@@ -12,6 +12,7 @@ namespace TradeActionServiceTests
         private readonly ITradeActionService _tradeActionService;
         private readonly Mock<IPricingService> _pricingService;
         private readonly ILogger<TradeActionService> _tradeActionLogger;
+        private readonly HashSet<string> _setupTickers = new HashSet<string>() { "IBM" };
 
         public TradeActionServiceTests()
         {
@@ -33,14 +34,14 @@ namespace TradeActionServiceTests
         public async Task Sell_ValidTicker_ReturnsTrueAsync()
         {
             var tradeActionService = (TradeActionService)_tradeActionService;
-            tradeActionService.Tickers = new HashSet<string>() { "IBM" };
+            tradeActionService.Tickers = _setupTickers;
             Assert.True(_tradeActionService.Sell("IBM", 5));
         }
         [Fact]
         public async Task Buy_ValidTickerAndQuantity_ReturnsTrueAsync()
         {
             var tradeActionService = (TradeActionService) _tradeActionService;
-            tradeActionService.Tickers = new HashSet<string>() { "IBM" };
+            tradeActionService.Tickers = _setupTickers;
             Assert.True(_tradeActionService.Buy("IBM", 5));
         }
         [Theory, MemberData(nameof(InvalidData))]
