@@ -17,7 +17,6 @@ namespace TradeActionServiceTests
         {
             _tradeActionLogger = new Mock<ILogger<TradeActionService>>().Object;
             _pricingService = new Mock<IPricingService>();
-            _pricingService.Setup(x => x.GetTickers()).ReturnsAsync(new List<string>() { "IBM" });
             _tradeActionService = new TradeActionService(_tradeActionLogger, _pricingService.Object);
         }
         public static IEnumerable<object[]> InvalidData =>
@@ -31,30 +30,34 @@ namespace TradeActionServiceTests
         };
 
         [Fact]
-        public async Task SellAsync_ValidTicker_ReturnsTrueAsync()
+        public async Task Sell_ValidTicker_ReturnsTrueAsync()
         {
-            Assert.True(await _tradeActionService.SellAsync("IBM", 5));
+            var tradeActionService = (TradeActionService)_tradeActionService;
+            tradeActionService.Tickers = new HashSet<string>() { "IBM" };
+            Assert.True(_tradeActionService.Sell("IBM", 5));
         }
         [Fact]
-        public async Task BuyAsync_ValidTickerAndQuantity_ReturnsTrueAsync()
+        public async Task Buy_ValidTickerAndQuantity_ReturnsTrueAsync()
         {
-            Assert.True(await _tradeActionService.BuyAsync("IBM", 5));
+            var tradeActionService = (TradeActionService) _tradeActionService;
+            tradeActionService.Tickers = new HashSet<string>() { "IBM" };
+            Assert.True(_tradeActionService.Buy("IBM", 5));
         }
         [Theory, MemberData(nameof(InvalidData))]
-        public void BuyAsync_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity)
+        public void Buy_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity)
         {
             // Arrange
             var exceptionType = typeof(ArgumentException);
             // Act and Assert
-            Assert.ThrowsAsync(exceptionType, async () => await _tradeActionService.BuyAsync(ticker, Quantity));
+            Assert.Throws(exceptionType, () => _tradeActionService.Buy(ticker, Quantity));
         }
         [Theory, MemberData(nameof(InvalidData))]
-        public void SellAsync_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity)
+        public void Sell_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity)
         {
             // Arrange
             var exceptionType = typeof(ArgumentException);
             // Act and Assert
-            Assert.ThrowsAsync(exceptionType, async () => await _tradeActionService.SellAsync(ticker, Quantity));
+            Assert.Throws(exceptionType, () => _tradeActionService.Sell(ticker, Quantity));
         }
     }
 }

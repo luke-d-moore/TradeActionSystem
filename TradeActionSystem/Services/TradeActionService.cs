@@ -10,6 +10,11 @@ namespace TradeActionSystem.Services
         private IPricingService _pricingService;
         private HashSet<string> _tickers;
         private const int _checkRate = 500;
+        public HashSet<string> Tickers
+        {
+            get { return _tickers; }
+            set { _tickers = value; }
+        }
         public TradeActionService(ILogger<TradeActionService> logger, IPricingService pricingService) 
             : base(_checkRate, logger)
         {
@@ -21,9 +26,8 @@ namespace TradeActionSystem.Services
         {
             return (await _pricingService.GetTickers()).ToHashSet();
         }
-        private async Task<bool> Validate(string Ticker, int Quantity, string Action)
+        private bool Validate(string Ticker, int Quantity, string Action)
         {
-            if (!_tickers.Any()) _tickers = await GetTickers();
             if (!_tickers.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
             {
                 _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
@@ -32,22 +36,22 @@ namespace TradeActionSystem.Services
             if (Quantity <= 0)
             {
                 _logger.LogError($"Invalid Quantity : {Quantity}, Action : {Action}");
-                throw new ArgumentOutOfRangeException("quantity", Quantity, "Quantity must be greater than 0.");
+                throw new ArgumentException("Quantity must be greater than 0.", "quantity");
             }
 
             return true;
         }
-        public async Task<bool> BuyAsync(string Ticker, int Quantity)
+        public bool Buy(string Ticker, int Quantity)
         {
-            if (!await Validate(Ticker, Quantity, nameof(BuyAsync))) return false;
+            if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
             _logger.LogInformation($"Buy {Quantity} of {Ticker} at {DateTime.Now}");
             //Execute the Trade
 
             return true;
         }
-        public async Task<bool> SellAsync(string Ticker, int Quantity)
+        public bool Sell(string Ticker, int Quantity)
         {
-            if(!await Validate(Ticker, Quantity, nameof(SellAsync))) return false;
+            if(!Validate(Ticker, Quantity, nameof(Sell))) return false;
             _logger.LogInformation($"Sell {Quantity} of {Ticker} at {DateTime.Now}");
             //Execute the Trade
 
@@ -56,6 +60,7 @@ namespace TradeActionSystem.Services
 
         protected override async Task<bool> CheckMessages()
         {
+            if (!_tickers.Any()) _tickers = await GetTickers();
             //Write code here to check messages from the queue
             //and then call the relevant method for buy or sell
             //the message will need a ticker, a quantity and the action buy or sell
@@ -65,11 +70,11 @@ namespace TradeActionSystem.Services
 
             if (message.Action == "Buy")
             {
-                return await BuyAsync(message.Ticker, message.Quantity).ConfigureAwait(false);
+                return Buy(message.Ticker, message.Quantity);
             }
             else
             {
-                return await SellAsync(message.Ticker, message.Quantity).ConfigureAwait(false);
+                return Sell(message.Ticker, message.Quantity);
             }
         }
 
