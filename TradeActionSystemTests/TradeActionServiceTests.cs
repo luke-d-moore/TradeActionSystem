@@ -33,7 +33,7 @@ namespace TradeActionServiceTests
         [Fact]
         public async Task Sell_ValidTicker_ReturnsTrueAsync()
         {
-            var tradeActionService = (TradeActionService)_tradeActionService;
+            var tradeActionService = (TradeActionService) _tradeActionService;
             tradeActionService.Tickers = _setupTickers;
             Assert.True(_tradeActionService.Sell("IBM", 5));
         }
