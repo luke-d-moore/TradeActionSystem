@@ -27,7 +27,7 @@ namespace TradeActionSystem.Services
                 {
                     using (HttpContent content = response.Content)
                     {
-                        var json = await content.ReadAsStringAsync();
+                        var json = await content.ReadAsStringAsync().ConfigureAwait(false);
                         var responseObject = JsonSerializer.Deserialize<GetPriceResponse>(json);
                         _logger.LogInformation($"GetAllPrices Response received at Time :{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}, response was : {json}");
                         IDictionary<string, decimal> prices = responseObject?.Prices;

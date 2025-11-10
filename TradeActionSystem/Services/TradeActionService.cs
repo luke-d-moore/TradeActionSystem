@@ -24,7 +24,7 @@ namespace TradeActionSystem.Services
         }
         private async Task<IDictionary<string, decimal>> GetPrices()
         {
-            return (await _pricingService.GetPrices());
+            return (await _pricingService.GetPrices().ConfigureAwait(false));
         }
         private bool Validate(string Ticker, int Quantity, string Action)
         {
@@ -74,7 +74,7 @@ namespace TradeActionSystem.Services
 
         protected override async Task<bool> CheckMessages()
         {
-            _prices = await GetPrices();
+            _prices = await GetPrices().ConfigureAwait(false);
             //Write code here to check messages from the queue
             //and then call the relevant method for buy or sell
             //the message will need a ticker, a quantity and the action buy or sell
