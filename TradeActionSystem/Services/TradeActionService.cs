@@ -112,7 +112,6 @@ namespace TradeActionSystem.Services
         private async Task<List<Message>> ReadAllAvailableMessagesAsync()
         {
             var factory = new ConnectionFactory { HostName = _hostName };
-            // Use 'using' to ensure connection and channel are disposed automatically
             using var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
             using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
 
