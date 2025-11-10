@@ -1,6 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using System.Globalization;
 using TradeActionSystem.Interfaces;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text;
+using TradeActionSystem.Dtos;
+using System.Text.Json;
 
 namespace TradeActionSystem.Services
 {
@@ -10,17 +15,20 @@ namespace TradeActionSystem.Services
         private IPricingService _pricingService;
         private IDictionary<string,decimal> _prices;
         private const int _checkRate = 500;
+        private readonly string _queueName;
         public IDictionary<string, decimal> Prices
         {
             get { return _prices; }
             set { _prices = value; }
         }
-        public TradeActionService(ILogger<TradeActionService> logger, IPricingService pricingService) 
+        public TradeActionService(ILogger<TradeActionService> logger, IPricingService pricingService, IConfiguration configuration) 
             : base(_checkRate, logger)
         {
             _logger = logger;
             _pricingService = pricingService;
             _prices = new ConcurrentDictionary<string,decimal>();
+            _queueName = configuration["RabbitMQQueue"];
+
         }
         private async Task<IDictionary<string, decimal>> GetPrices()
         {
@@ -75,12 +83,8 @@ namespace TradeActionSystem.Services
         protected override async Task<bool> CheckMessages()
         {
             _prices = await GetPrices().ConfigureAwait(false);
-            //Write code here to check messages from the queue
-            //and then call the relevant method for buy or sell
-            //the message will need a ticker, a quantity and the action buy or sell
 
-            var message = new Message("IBM", 5, DateTime.Now.Millisecond < 500 ? "Buy" : "Sell"); 
-            //vary the buy or sell command for testing the logic before we make the queue
+            var message = await ReadMessages().ConfigureAwait(false); 
 
             if (message.Action == "Buy")
             {
@@ -92,19 +96,34 @@ namespace TradeActionSystem.Services
             }
         }
 
-        //This message class is here as a template of what I will be trying to do with the message queue
-        //get a message which has these values and then I can use them to commit the action
-        private class Message
+        private async Task<Message> ReadMessages()
         {
-            public string Ticker;
-            public int Quantity;
-            public string Action;
-            public Message(string ticker, int quantity, string action)
+            var factory = new ConnectionFactory { HostName = "localhost" };
+            var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
+            var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+
+            var consumer = new AsyncEventingBasicConsumer(channel);
+
+            var messageReceivedTaskSource = new TaskCompletionSource<Message>();
+
+            consumer.ReceivedAsync += async (model, ea) =>
             {
-                Ticker = ticker;
-                Quantity = quantity;
-                Action = action;
-            }
+                var body = ea.Body.ToArray();
+                var jsonmessage = Encoding.UTF8.GetString(body);
+
+                _logger.LogInformation($"message : {jsonmessage}");
+
+                var message = JsonSerializer.Deserialize<Message>(jsonmessage);
+
+                messageReceivedTaskSource.SetResult(message);
+            };
+
+            await channel.BasicConsumeAsync(
+                queue: _queueName,
+                autoAck: true,
+                consumer: consumer);
+
+            return await messageReceivedTaskSource.Task;
         }
     }
 }
