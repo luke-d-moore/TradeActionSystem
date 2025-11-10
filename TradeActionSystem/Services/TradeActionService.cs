@@ -52,6 +52,7 @@ namespace TradeActionSystem.Services
             }
             else
             {
+                _logger.LogError($"Failed attempt to {nameof(Buy)}, Ticker was : {Ticker} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
                 return false;
             }
         }
@@ -66,6 +67,7 @@ namespace TradeActionSystem.Services
             }
             else
             {
+                _logger.LogError($"Failed attempt to {nameof(Sell)}, Ticker was : {Ticker} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
                 return false;
             }
         }
