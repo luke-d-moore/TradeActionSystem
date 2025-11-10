@@ -9,7 +9,7 @@ namespace TradeActionSystem.Services
         private readonly ILogger<TradeActionService> _logger;
         private IPricingService _pricingService;
         private IDictionary<string,decimal> _prices;
-        private const int _checkRate = 100;
+        private const int _checkRate = 500;
         public IDictionary<string, decimal> Prices
         {
             get { return _prices; }
@@ -72,7 +72,7 @@ namespace TradeActionSystem.Services
 
         protected override async Task<bool> CheckMessages()
         {
-            if (!_prices.Any()) _prices = await GetPrices();
+            _prices = await GetPrices();
             //Write code here to check messages from the queue
             //and then call the relevant method for buy or sell
             //the message will need a ticker, a quantity and the action buy or sell
