@@ -16,6 +16,7 @@ namespace TradeActionSystem.Services
         private IDictionary<string,decimal> _prices;
         private const int _checkRate = 500;
         private readonly string _queueName;
+        private readonly string _hostName;
         public IDictionary<string, decimal> Prices
         {
             get { return _prices; }
@@ -28,6 +29,7 @@ namespace TradeActionSystem.Services
             _pricingService = pricingService;
             _prices = new ConcurrentDictionary<string,decimal>();
             _queueName = configuration["RabbitMQQueue"];
+            _hostName = configuration["ConnectionHostName"];
 
         }
         private async Task<IDictionary<string, decimal>> GetPrices()
@@ -90,15 +92,19 @@ namespace TradeActionSystem.Services
             {
                 return Buy(message.Ticker, message.Quantity);
             }
-            else
+            else if (message.Action == "Sell")
             {
                 return Sell(message.Ticker, message.Quantity);
+            }
+            else
+            {
+                return false;
             }
         }
 
         private async Task<Message> ReadMessages()
         {
-            var factory = new ConnectionFactory { HostName = "localhost" };
+            var factory = new ConnectionFactory { HostName = _hostName };
             var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
             var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
 
@@ -111,7 +117,7 @@ namespace TradeActionSystem.Services
                 var body = ea.Body.ToArray();
                 var jsonmessage = Encoding.UTF8.GetString(body);
 
-                _logger.LogInformation($"message : {jsonmessage}");
+                _logger.LogInformation($"Message : {jsonmessage} at : {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
 
                 var message = JsonSerializer.Deserialize<Message>(jsonmessage);
 
