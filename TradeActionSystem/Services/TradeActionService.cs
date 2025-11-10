@@ -86,50 +86,64 @@ namespace TradeActionSystem.Services
         {
             _prices = await GetPrices().ConfigureAwait(false);
 
-            var message = await ReadMessages().ConfigureAwait(false); 
+            var messages = await ReadAllAvailableMessagesAsync().ConfigureAwait(false);
 
-            if (message.Action == "Buy")
+            _logger.LogInformation($"Message Count is {messages.Count} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+
+            foreach ( var message in messages)
             {
-                return Buy(message.Ticker, message.Quantity);
+                if (message.Action == "Buy")
+                {
+                    Buy(message.Ticker, message.Quantity);
+                }
+                else if (message.Action == "Sell")
+                {
+                    Sell(message.Ticker, message.Quantity);
+                }
+                else
+                {
+                    continue;
+                }
             }
-            else if (message.Action == "Sell")
-            {
-                return Sell(message.Ticker, message.Quantity);
-            }
-            else
-            {
-                return false;
-            }
+
+            return true;
         }
 
-        private async Task<Message> ReadMessages()
+        private async Task<List<Message>> ReadAllAvailableMessagesAsync()
         {
             var factory = new ConnectionFactory { HostName = _hostName };
-            var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
-            var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+            // Use 'using' to ensure connection and channel are disposed automatically
+            using var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
+            using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
 
-            var consumer = new AsyncEventingBasicConsumer(channel);
+            var messages = new List<Message>();
 
-            var messageReceivedTaskSource = new TaskCompletionSource<Message>();
-
-            consumer.ReceivedAsync += async (model, ea) =>
+            while (true)
             {
-                var body = ea.Body.ToArray();
+                var result = await channel.BasicGetAsync(queue: _queueName, autoAck: true);
+
+                if (result == null)
+                {
+                    break;
+                }
+
+                var body = result.Body.ToArray();
                 var jsonmessage = Encoding.UTF8.GetString(body);
 
                 _logger.LogInformation($"Message : {jsonmessage} at : {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
 
-                var message = JsonSerializer.Deserialize<Message>(jsonmessage);
+                try
+                {
+                    var message = JsonSerializer.Deserialize<Message>(jsonmessage);
+                    messages.Add(message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to deserialize message: {JsonMessage}", jsonmessage);
+                }
+            }
 
-                messageReceivedTaskSource.SetResult(message);
-            };
-
-            await channel.BasicConsumeAsync(
-                queue: _queueName,
-                autoAck: true,
-                consumer: consumer);
-
-            return await messageReceivedTaskSource.Task;
+            return messages;
         }
     }
 }
