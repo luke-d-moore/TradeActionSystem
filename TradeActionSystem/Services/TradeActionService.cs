@@ -8,27 +8,27 @@ namespace TradeActionSystem.Services
     {
         private readonly ILogger<TradeActionService> _logger;
         private IPricingService _pricingService;
-        private HashSet<string> _tickers;
-        private const int _checkRate = 500;
-        public HashSet<string> Tickers
+        private IDictionary<string,decimal> _prices;
+        private const int _checkRate = 100;
+        public IDictionary<string, decimal> Prices
         {
-            get { return _tickers; }
-            set { _tickers = value; }
+            get { return _prices; }
+            set { _prices = value; }
         }
         public TradeActionService(ILogger<TradeActionService> logger, IPricingService pricingService) 
             : base(_checkRate, logger)
         {
             _logger = logger;
             _pricingService = pricingService;
-            _tickers = new HashSet<string>();
+            _prices = new ConcurrentDictionary<string,decimal>();
         }
-        private async Task<HashSet<string>> GetTickers()
+        private async Task<IDictionary<string, decimal>> GetPrices()
         {
-            return (await _pricingService.GetTickers()).ToHashSet();
+            return (await _pricingService.GetPrices());
         }
         private bool Validate(string Ticker, int Quantity, string Action)
         {
-            if (!_tickers.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
+            if (!_prices.Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
             {
                 _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
                 throw new ArgumentException("Invalid Ticker", "ticker");
@@ -44,23 +44,35 @@ namespace TradeActionSystem.Services
         public bool Buy(string Ticker, int Quantity)
         {
             if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
-            _logger.LogInformation($"Buy {Quantity} of {Ticker} at {DateTime.Now}");
-            //Execute the Trade
-
-            return true;
+            if (_prices.TryGetValue(Ticker, out var price))
+            {
+                _logger.LogInformation($"Buy {Quantity} of {Ticker} at Price {price} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                //Execute the Trade
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public bool Sell(string Ticker, int Quantity)
         {
-            if(!Validate(Ticker, Quantity, nameof(Sell))) return false;
-            _logger.LogInformation($"Sell {Quantity} of {Ticker} at {DateTime.Now}");
-            //Execute the Trade
-
-            return true;
+            if (!Validate(Ticker, Quantity, nameof(Sell))) return false;
+            if (_prices.TryGetValue(Ticker, out var price))
+            {
+                _logger.LogInformation($"Sell {Quantity} of {Ticker} at Price {price} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                //Execute the Trade
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         protected override async Task<bool> CheckMessages()
         {
-            if (!_tickers.Any()) _tickers = await GetTickers();
+            if (!_prices.Any()) _prices = await GetPrices();
             //Write code here to check messages from the queue
             //and then call the relevant method for buy or sell
             //the message will need a ticker, a quantity and the action buy or sell

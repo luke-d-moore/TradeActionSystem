@@ -2,6 +2,6 @@
 {
     public interface IPricingService
     {
-        public Task<IList<string>> GetTickers();
+        public Task<IDictionary<string, decimal>> GetPrices();
     }
 }
