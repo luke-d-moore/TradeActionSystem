@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using TradeActionSystem.Interfaces;
 using Castle.Core.Configuration;
+using System.Collections.Concurrent;
 
 namespace TradeActionServiceTests
 {
@@ -14,7 +15,7 @@ namespace TradeActionServiceTests
         private readonly Mock<IPricingService> _pricingService;
         private readonly ILogger<TradeActionService> _tradeActionLogger;
         private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
-        private readonly IDictionary<string, decimal> _setupPrices = new Dictionary<string, decimal>() { { "IBM", 300.00m } };
+        private readonly ConcurrentDictionary<string, decimal> _setupPrices = new ConcurrentDictionary<string, decimal>();
 
         public TradeActionServiceTests()
         {
@@ -22,6 +23,7 @@ namespace TradeActionServiceTests
             _pricingService = new Mock<IPricingService>();
             _configuration = new Mock<Microsoft.Extensions.Configuration.IConfiguration>().Object;
             _tradeActionService = new TradeActionService(_tradeActionLogger, _pricingService.Object, _configuration);
+            _setupPrices.TryAdd("IBM", 300m);
         }
         public static IEnumerable<object[]> InvalidData =>
         new List<object[]>

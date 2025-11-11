@@ -13,11 +13,11 @@ namespace TradeActionSystem.Services
     {
         private readonly ILogger<TradeActionService> _logger;
         private IPricingService _pricingService;
-        private IDictionary<string,decimal> _prices;
+        private ConcurrentDictionary<string,decimal> _prices;
         private const int _checkRate = 500;
         private readonly string _queueName;
         private readonly string _hostName;
-        public IDictionary<string, decimal> Prices
+        public ConcurrentDictionary<string, decimal> Prices
         {
             get { return _prices; }
             set { _prices = value; }
@@ -82,9 +82,20 @@ namespace TradeActionSystem.Services
             }
         }
 
+        private async Task SetPrices(IDictionary<string, decimal> prices)
+        {
+            foreach(var price in prices)
+            {
+                if(!_prices.TryAdd(price.Key, price.Value))
+                {
+                    _prices[price.Key] = price.Value;
+                }
+            }
+        }
+
         protected override async Task<bool> CheckMessages()
         {
-            _prices = await GetPrices().ConfigureAwait(false);
+            SetPrices(await GetPrices().ConfigureAwait(false));
 
             var messages = await ReadAllAvailableMessagesAsync().ConfigureAwait(false);
 
