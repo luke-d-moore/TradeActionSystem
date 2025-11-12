@@ -89,7 +89,7 @@ namespace TradeActionSystem.Services
             }
         }
 
-        private Task SetPrices(IDictionary<string, decimal> prices)
+        private async Task SetPrices(IDictionary<string, decimal> prices)
         {
             foreach(var price in prices)
             {
@@ -98,8 +98,6 @@ namespace TradeActionSystem.Services
                     _prices[price.Key] = price.Value;
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         private bool ExecuteTrade(Message message)
@@ -130,7 +128,7 @@ namespace TradeActionSystem.Services
             {
                 try
                 {
-                    await SetPrices(await GetPrices().ConfigureAwait(false));
+                    await SetPrices(await GetPrices().ConfigureAwait(false)).ConfigureAwait(false);
                     _logger.LogInformation($"Prices updated successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
                 }
                 catch (Exception ex)
