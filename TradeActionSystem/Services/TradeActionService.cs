@@ -21,7 +21,6 @@ namespace TradeActionSystem.Services
         private ConcurrentDictionary<string,decimal> _prices;
         private const int _checkRate = 500;
         private const int _networkRecoveryInterval = 10;
-        private const int _retryInterval = 5;
         private readonly string _queueName;
         private readonly string _hostName;
         private readonly HashSet<string> _allowedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Buy", "Sell" };
@@ -190,8 +189,8 @@ namespace TradeActionSystem.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Failed to connect to RabbitMQ. Retrying in {_retryInterval} seconds");
-                    await Task.Delay(TimeSpan.FromSeconds(_retryInterval), cancellationToken).ConfigureAwait(false);
+                    _logger.LogError(ex, $"Failed to connect to RabbitMQ. Retrying in {_networkRecoveryInterval} seconds");
+                    await Task.Delay(TimeSpan.FromSeconds(_networkRecoveryInterval), cancellationToken).ConfigureAwait(false);
                 }
             }
         }
