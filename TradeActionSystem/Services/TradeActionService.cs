@@ -158,6 +158,8 @@ namespace TradeActionSystem.Services
                     using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
 
                     await channel.BasicQosAsync(0, 1, false);
+                    //Only send one message at a time.
+                    //Do not send me the next message until I explicitly acknowledge that I have finished processing the previous one.
 
                     var consumer = new AsyncEventingBasicConsumer(channel);
 
