@@ -19,7 +19,7 @@ namespace TradeActionSystem.Services
         private readonly ILogger<TradeActionService> _logger;
         private IPricingService _pricingService;
         private ConcurrentDictionary<string,decimal> _prices;
-        private const int _checkRate = 500;
+        private const int _checkRate = 5000;
         private const int _networkRecoveryInterval = 10;
         private readonly string _queueName;
         private readonly string _hostName;
