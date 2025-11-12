@@ -166,50 +166,7 @@ namespace TradeActionSystem.Services
 
                     cancellationToken.Register(() => processCompletionSource.SetResult(true));
 
-                    consumer.ReceivedAsync += async (model, ea) =>
-                    {
-                        var deliveryTag = ea.DeliveryTag;
-                        string jsonmessage = string.Empty;
-                        try
-                        {
-                            var body = ea.Body.ToArray();
-                            jsonmessage = Encoding.UTF8.GetString(body);
-
-                            _logger.LogInformation($"Processing message: {jsonmessage} at : {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-
-                            var message = JsonSerializer.Deserialize<Message>(jsonmessage);
-
-                            bool tradeExecuted = false;
-                            bool requeue = true;
-
-                            if (message == null || !_allowedActions.Contains(message.Action))
-                            {
-                                tradeExecuted = false;
-                                requeue = false;
-                            }
-                            else
-                            {
-                                tradeExecuted = ExecuteTrade(message);
-                            }
-
-                            if (tradeExecuted)
-                            {
-                                await channel.BasicAckAsync(deliveryTag, multiple: false);
-                                _logger.LogInformation($"Message acknowledged successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-                            }
-                            else
-                            {
-                                _logger.LogError($"Trade execution failed for message : {jsonmessage}. Nack message requeue : {requeue}");
-                                await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: requeue);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"Failed to process message: {jsonmessage}. Nack message without requeue");
-                            // If deserialization fails, we Nack without requeueing (potentially dead-lettering)
-                            await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
-                        }
-                    };
+                    consumer.ReceivedAsync += async (model, eventArgs) => await ProcessMessage(eventArgs, channel);
 
                     var consumerTag = await channel.BasicConsumeAsync(
                         queue: _queueName,
@@ -239,53 +196,98 @@ namespace TradeActionSystem.Services
             }
         }
 
-//DB stuff Idempotent Consumer notes and ideas for next steps
+        private async Task ProcessMessage(BasicDeliverEventArgs ea, IChannel channel)
+        {
+            var deliveryTag = ea.DeliveryTag;
+            string jsonmessage = string.Empty;
+            try
+            {
+                var body = ea.Body.ToArray();
+                jsonmessage = Encoding.UTF8.GetString(body);
 
-//Generate a Unique ID(Idempotency Key): The producing system(System B) must generate a unique,
-//non-repeating identifier(like a GUID) for each trade message.This ID should be included in the message payload.
-//Store Processed IDs: System C must have a mechanism to record every idempotency key
-//it has successfully processed.A simple database table works well for this.
-//Check and Process in a Transaction: The trade execution logic in
-//TradeActionSystem must perform a check and write within a single database transaction.
+                _logger.LogInformation($"Processing message: {jsonmessage} at : {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
 
-//        // Inside the ReceivedAsync handler in TradeActionSystem
+                var message = JsonSerializer.Deserialize<Message>(jsonmessage);
 
-//        // 1. Get the message and its unique ID
-//        var uniqueTradeId = message.TradeId; // Assuming TradeId is part of the message
-//        var deliveryTag = ea.DeliveryTag;
+                bool tradeExecuted = false;
+                bool requeue = true;
 
-//try
-//{
-//    // Begin a database transaction
-//    using var transaction = dbContext.Database.BeginTransaction();
+                if (message == null || !_allowedActions.Contains(message.Action))
+                {
+                    tradeExecuted = false;
+                    requeue = false;
+                }
+                else
+                {
+                    tradeExecuted = ExecuteTrade(message);
+                }
 
-//    // 2. Check if the ID has already been processed
-//    if (await dbContext.ProcessedTradeIds.AnyAsync(id => id == uniqueTradeId))
-//    {
-//        _logger.LogInformation($"Duplicate message received for trade ID {uniqueTradeId}. Ignoring.");
-//        // Ack the message immediately since it's already processed
-//        channel.BasicAck(deliveryTag, multiple: false);
-//        transaction.Commit();
-//        return; // Exit without processing again
-//    }
+                if (tradeExecuted)
+                {
+                    await channel.BasicAckAsync(deliveryTag, multiple: false);
+                    _logger.LogInformation($"Message acknowledged successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                }
+                else
+                {
+                    _logger.LogError($"Trade execution failed for message : {jsonmessage}. Nack message requeue : {requeue}");
+                    await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: requeue);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to process message: {jsonmessage}. Nack message without requeue");
+                // If deserialization fails, we Nack without requeueing (potentially dead-lettering)
+                await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
+            }
+        }
 
-//    // 3. Action the trade
-//    await ActionTrade(message); // This contains your Buy/Sell logic
+        //DB stuff Idempotent Consumer notes and ideas for next steps
 
-//    // 4. Record the unique ID as processed
-//    dbContext.ProcessedTradeIds.Add(uniqueTradeId);
-//    await dbContext.SaveChangesAsync();
+        //Generate a Unique ID(Idempotency Key): The producing system(System B) must generate a unique,
+        //non-repeating identifier(like a GUID) for each trade message.This ID should be included in the message payload.
+        //Store Processed IDs: System C must have a mechanism to record every idempotency key
+        //it has successfully processed.A simple database table works well for this.
+        //Check and Process in a Transaction: The trade execution logic in
+        //TradeActionSystem must perform a check and write within a single database transaction.
 
-//    // 5. Commit the database transaction and acknowledge the message
-//    transaction.Commit();
-//    channel.BasicAck(deliveryTag, multiple: false);
-//}
-//catch (Exception ex)
-//{
-//    // Handle error, roll back transaction, nack the message
-//    _logger.LogError(ex, "Error processing trade {TradeId}", uniqueTradeId);
-//channel.BasicNack(deliveryTag, multiple: false, requeue: true);
-//    // Note: The transaction will be rolled back automatically on exception,
-//    // or you can explicitly call transaction.Rollback().
+        //        // Inside the ReceivedAsync handler in TradeActionSystem
+
+        //        // 1. Get the message and its unique ID
+        //        var uniqueTradeId = message.TradeId; // Assuming TradeId is part of the message
+        //        var deliveryTag = ea.DeliveryTag;
+
+        //try
+        //{
+        //    // Begin a database transaction
+        //    using var transaction = dbContext.Database.BeginTransaction();
+
+        //    // 2. Check if the ID has already been processed
+        //    if (await dbContext.ProcessedTradeIds.AnyAsync(id => id == uniqueTradeId))
+        //    {
+        //        _logger.LogInformation($"Duplicate message received for trade ID {uniqueTradeId}. Ignoring.");
+        //        // Ack the message immediately since it's already processed
+        //        channel.BasicAck(deliveryTag, multiple: false);
+        //        transaction.Commit();
+        //        return; // Exit without processing again
+        //    }
+
+        //    // 3. Action the trade
+        //    await ActionTrade(message); // This contains your Buy/Sell logic
+
+        //    // 4. Record the unique ID as processed
+        //    dbContext.ProcessedTradeIds.Add(uniqueTradeId);
+        //    await dbContext.SaveChangesAsync();
+
+        //    // 5. Commit the database transaction and acknowledge the message
+        //    transaction.Commit();
+        //    channel.BasicAck(deliveryTag, multiple: false);
+        //}
+        //catch (Exception ex)
+        //{
+        //    // Handle error, roll back transaction, nack the message
+        //    _logger.LogError(ex, "Error processing trade {TradeId}", uniqueTradeId);
+        //channel.BasicNack(deliveryTag, multiple: false, requeue: true);
+        //    // Note: The transaction will be rolled back automatically on exception,
+        //    // or you can explicitly call transaction.Rollback().
     }
 }
