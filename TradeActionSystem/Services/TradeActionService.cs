@@ -63,13 +63,13 @@ namespace TradeActionSystem.Services
             if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
             if (_prices.TryGetValue(Ticker, out var price))
             {
-                _logger.LogInformation($"Buy {Quantity} of {Ticker} at Price {price} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                _logger.LogInformation($"Buy {Quantity} of {Ticker} at Price {price}");
                 //Execute the Trade
                 return true;
             }
             else
             {
-                _logger.LogError($"Failed attempt to {nameof(Buy)}, Ticker was : {Ticker} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                _logger.LogError($"Failed attempt to {nameof(Buy)}, Ticker was : {Ticker}");
                 return false;
             }
         }
@@ -78,13 +78,13 @@ namespace TradeActionSystem.Services
             if (!Validate(Ticker, Quantity, nameof(Sell))) return false;
             if (_prices.TryGetValue(Ticker, out var price))
             {
-                _logger.LogInformation($"Sell {Quantity} of {Ticker} at Price {price} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                _logger.LogInformation($"Sell {Quantity} of {Ticker} at Price {price}");
                 //Execute the Trade
                 return true;
             }
             else
             {
-                _logger.LogError($"Failed attempt to {nameof(Sell)}, Ticker was : {Ticker} at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                _logger.LogError($"Failed attempt to {nameof(Sell)}, Ticker was : {Ticker}");
                 return false;
             }
         }
@@ -129,7 +129,7 @@ namespace TradeActionSystem.Services
                 try
                 {
                     await SetPrices(await GetPrices().ConfigureAwait(false)).ConfigureAwait(false);
-                    _logger.LogInformation($"Prices updated successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                    _logger.LogInformation($"Prices updated successfully");
                 }
                 catch (Exception ex)
                 {
@@ -204,7 +204,7 @@ namespace TradeActionSystem.Services
                 var body = ea.Body.ToArray();
                 jsonmessage = Encoding.UTF8.GetString(body);
 
-                _logger.LogInformation($"Processing message: {jsonmessage} at : {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                _logger.LogInformation($"Processing message: {jsonmessage}");
 
                 var message = JsonSerializer.Deserialize<Message>(jsonmessage);
 
@@ -224,7 +224,7 @@ namespace TradeActionSystem.Services
                 if (tradeExecuted)
                 {
                     await channel.BasicAckAsync(deliveryTag, multiple: false);
-                    _logger.LogInformation($"Message acknowledged successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                    _logger.LogInformation($"Message acknowledged successfully");
                 }
                 else
                 {

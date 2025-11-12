@@ -22,14 +22,14 @@ namespace TradeActionSystem.Services
             try
             {
                 HttpClient client = new HttpClient();
-                _logger.LogInformation($"GetAllPrices Request sent at Time :{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
+                _logger.LogInformation($"GetAllPrices Request sent");
                 using (HttpResponseMessage response = await client.GetAsync(_baseURL + "/GetAllPrices").ConfigureAwait(false))
                 {
                     using (HttpContent content = response.Content)
                     {
                         var json = await content.ReadAsStringAsync().ConfigureAwait(false);
                         var responseObject = JsonSerializer.Deserialize<GetPriceResponse>(json);
-                        _logger.LogInformation($"GetAllPrices Response received at Time :{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}, response was : {json}");
+                        _logger.LogInformation($"GetAllPrices Response received, response was : {json}");
                         IDictionary<string, decimal> prices = responseObject?.Prices;
                         return prices ?? new Dictionary<string, decimal>();
                     }
@@ -37,7 +37,7 @@ namespace TradeActionSystem.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"GetAllPrices Failed at Time :{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}, with the following exception message" + ex.Message);
+                _logger.LogError(ex, $"GetAllPrices Failed, with the following exception message" + ex.Message);
             }
             return new Dictionary<string, decimal>();
         }
