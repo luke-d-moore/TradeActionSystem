@@ -132,7 +132,7 @@ namespace TradeActionSystem.Services
                 try
                 {
                     await SetPrices(await GetPrices().ConfigureAwait(false));
-                    _logger.LogInformation("Prices updated successfully.");
+                    _logger.LogInformation($"Prices updated successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
                 }
                 catch (Exception ex)
                 {
@@ -195,7 +195,7 @@ namespace TradeActionSystem.Services
                             if (tradeExecuted)
                             {
                                 await channel.BasicAckAsync(deliveryTag, multiple: false);
-                                _logger.LogInformation("Message acknowledged successfully.");
+                                _logger.LogInformation($"Message acknowledged successfully at {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
                             }
                             else
                             {
