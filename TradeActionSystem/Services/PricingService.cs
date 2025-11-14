@@ -11,6 +11,7 @@ namespace TradeActionSystem.Services
         private readonly ILogger<PricingService> _logger;
         private IConfiguration _configuration;
         private string _baseURL;
+        private HttpClient _client = new HttpClient();
         public PricingService(ILogger<PricingService> logger, IConfiguration configuration) 
         { 
             _logger = logger;
@@ -19,27 +20,42 @@ namespace TradeActionSystem.Services
         }
         public async Task<IDictionary<string, decimal>> GetPrices()
         {
+            var requestUrl = $"{_baseURL}/GetAllPrices";
+
+            _logger.LogInformation($"GetAllPrices Request sent to {requestUrl}");
+
             try
             {
-                HttpClient client = new HttpClient();
-                _logger.LogInformation($"GetAllPrices Request sent");
-                using (HttpResponseMessage response = await client.GetAsync(_baseURL + "/GetAllPrices").ConfigureAwait(false))
+                using (HttpResponseMessage response = await _client.GetAsync(requestUrl).ConfigureAwait(false))
                 {
-                    using (HttpContent content = response.Content)
-                    {
-                        var json = await content.ReadAsStringAsync().ConfigureAwait(false);
-                        var responseObject = JsonSerializer.Deserialize<GetPriceResponse>(json);
-                        _logger.LogInformation($"GetAllPrices Response received, response was : {json}");
-                        IDictionary<string, decimal> prices = responseObject?.Prices;
-                        return prices ?? new Dictionary<string, decimal>();
-                    }
+                    response.EnsureSuccessStatusCode();
+
+                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    _logger.LogInformation($"GetAllPrices Response received. Response : {json}");
+
+                    var responseObject = JsonSerializer.Deserialize<GetPriceResponse>(json);
+
+                    IDictionary<string, decimal> prices = responseObject?.Prices;
+
+                    return prices ?? new Dictionary<string, decimal>();
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, $"GetAllPrices Failed due to HTTP request error. Status Code: {ex.StatusCode}");
+                throw;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "GetAllPrices Failed JSON deserialization");
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"GetAllPrices Failed, with the following exception message" + ex.Message);
+                _logger.LogError(ex, "An unexpected error occurred while getting all prices.");
+                throw;
             }
-            return new Dictionary<string, decimal>();
         }
     }
 }
