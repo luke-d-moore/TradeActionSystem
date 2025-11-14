@@ -12,6 +12,10 @@ namespace TradeActionSystem.Services
         private IConfiguration _configuration;
         private string _baseURL;
         private HttpClient _client = new HttpClient();
+        public string BaseURL
+        {
+            get { return _baseURL; }
+        }
         public PricingService(ILogger<PricingService> logger, IConfiguration configuration) 
         { 
             _logger = logger;
@@ -20,7 +24,7 @@ namespace TradeActionSystem.Services
         }
         public async Task<IDictionary<string, decimal>> GetPrices()
         {
-            var requestUrl = $"{_baseURL}/GetAllPrices";
+            var requestUrl = $"{BaseURL}/GetAllPrices";
 
             _logger.LogInformation($"GetAllPrices Request sent to {requestUrl}");
 

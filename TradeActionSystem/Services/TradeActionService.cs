@@ -29,6 +29,18 @@ namespace TradeActionSystem.Services
             get { return _prices; }
             set { _prices = value; }
         }
+        public HashSet<string> AllowedActions
+        { 
+            get => _allowedActions;
+        }
+        public string HostName
+        {
+            get => _hostName;
+        }
+        public string QueueName
+        {
+            get => _queueName;
+        }
         public TradeActionService(ILogger<TradeActionService> logger, IPricingService pricingService, IConfiguration configuration) 
             : base(logger)
         {
@@ -45,7 +57,7 @@ namespace TradeActionSystem.Services
         }
         private bool Validate(string Ticker, int Quantity, string Action)
         {
-            if (!_prices.Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
+            if (!Prices.Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
             {
                 _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
                 throw new ArgumentException("Invalid Ticker", "ticker");
@@ -61,7 +73,7 @@ namespace TradeActionSystem.Services
         public bool Buy(string Ticker, int Quantity)
         {
             if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
-            if (_prices.TryGetValue(Ticker, out var price))
+            if (Prices.TryGetValue(Ticker, out var price))
             {
                 _logger.LogInformation($"Buy {Quantity} of {Ticker} at Price {price}");
                 //Execute the Trade
@@ -76,7 +88,7 @@ namespace TradeActionSystem.Services
         public bool Sell(string Ticker, int Quantity)
         {
             if (!Validate(Ticker, Quantity, nameof(Sell))) return false;
-            if (_prices.TryGetValue(Ticker, out var price))
+            if (Prices.TryGetValue(Ticker, out var price))
             {
                 _logger.LogInformation($"Sell {Quantity} of {Ticker} at Price {price}");
                 //Execute the Trade
@@ -93,9 +105,9 @@ namespace TradeActionSystem.Services
         {
             foreach(var price in prices)
             {
-                if(!_prices.TryAdd(price.Key, price.Value))
+                if(!Prices.TryAdd(price.Key, price.Value))
                 {
-                    _prices[price.Key] = price.Value;
+                    Prices[price.Key] = price.Value;
                 }
             }
         }
@@ -143,13 +155,13 @@ namespace TradeActionSystem.Services
         private async Task ProcessMessagesAsync(CancellationToken cancellationToken)
         {
             var factory = new ConnectionFactory { 
-                HostName = _hostName, 
+                HostName = HostName, 
                 AutomaticRecoveryEnabled = true, 
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(_networkRecoveryInterval) };
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (!_prices.Any()) continue; //prevent messages being picked up before currentprices have been retrieved
+                if (!Prices.Any()) continue; //prevent messages being picked up before currentprices have been retrieved
                 try
                 {
                     using var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
@@ -168,7 +180,7 @@ namespace TradeActionSystem.Services
                     consumer.ReceivedAsync += async (model, eventArgs) => await ProcessMessage(eventArgs, channel);
 
                     var consumerTag = await channel.BasicConsumeAsync(
-                        queue: _queueName,
+                        queue: QueueName,
                         autoAck: false,
                         consumer: consumer);
 
@@ -211,7 +223,7 @@ namespace TradeActionSystem.Services
                 bool tradeExecuted = false;
                 bool requeue = true;
 
-                if (message == null || !_allowedActions.Contains(message.Action))
+                if (message == null || !AllowedActions.Contains(message.Action))
                 {
                     tradeExecuted = false;
                     requeue = false;
