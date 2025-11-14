@@ -105,10 +105,7 @@ namespace TradeActionSystem.Services
         {
             foreach(var price in prices)
             {
-                if(!Prices.TryAdd(price.Key, price.Value))
-                {
-                    Prices[price.Key] = price.Value;
-                }
+                Prices[price.Key] = price.Value;
             }
         }
 
