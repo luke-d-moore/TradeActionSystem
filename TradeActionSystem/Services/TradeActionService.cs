@@ -18,7 +18,7 @@ namespace TradeActionSystem.Services
     {
         private readonly ILogger<TradeActionService> _logger;
         private IPricingService _pricingService;
-        private ConcurrentDictionary<string,decimal> _prices;
+        private ConcurrentDictionary<string,decimal> _prices = new ConcurrentDictionary<string, decimal>();
         private const int _checkRate = 5000;
         private const int _networkRecoveryInterval = 10;
         private readonly string _queueName;
@@ -46,7 +46,6 @@ namespace TradeActionSystem.Services
         {
             _logger = logger;
             _pricingService = pricingService;
-            _prices = new ConcurrentDictionary<string,decimal>();
             _queueName = configuration["RabbitMQQueue"];
             _hostName = configuration["ConnectionHostName"];
 
