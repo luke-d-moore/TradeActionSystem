@@ -28,11 +28,11 @@ namespace TradeActionServiceTests
         public static IEnumerable<object[]> InvalidData =>
         new List<object[]>
         {
-                    new object[] { null, 5 },
-                    new object[] { "wrong", 5},
-                    new object[] { "", 5 },
-                    new object[] { "IBM", 0 },
-                    new object[] { "IBM", -5}
+                    new object[] { null, 5 , "abc"},
+                    new object[] { "wrong", 5, "abc"},
+                    new object[] { "", 5 , "abc" },
+                    new object[] { "IBM", 0 , "abc"},
+                    new object[] { "IBM", -5, "abc"}
         };
 
         [Fact]
@@ -40,30 +40,30 @@ namespace TradeActionServiceTests
         {
             var tradeActionService = (TradeActionService) _tradeActionService;
             tradeActionService.Prices = _setupPrices;
-            Assert.True(_tradeActionService.Sell("IBM", 5));
+            Assert.True(_tradeActionService.Sell("IBM", 5, "abc"));
         }
         [Fact]
         public async Task Buy_ValidTickerAndQuantity_ReturnsTrueAsync()
         {
             var tradeActionService = (TradeActionService) _tradeActionService;
             tradeActionService.Prices = _setupPrices;
-            Assert.True(_tradeActionService.Buy("IBM", 5));
+            Assert.True(_tradeActionService.Buy("IBM", 5, "abc"));
         }
         [Theory, MemberData(nameof(InvalidData))]
-        public void Buy_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity)
+        public void Buy_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity, string UniqueID)
         {
             // Arrange
             var exceptionType = typeof(ArgumentException);
             // Act and Assert
-            Assert.Throws(exceptionType, () => _tradeActionService.Buy(ticker, Quantity));
+            Assert.Throws(exceptionType, () => _tradeActionService.Buy(ticker, Quantity, UniqueID));
         }
         [Theory, MemberData(nameof(InvalidData))]
-        public void Sell_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity)
+        public void Sell_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity, string UniqueID)
         {
             // Arrange
             var exceptionType = typeof(ArgumentException);
             // Act and Assert
-            Assert.Throws(exceptionType, () => _tradeActionService.Sell(ticker, Quantity));
+            Assert.Throws(exceptionType, () => _tradeActionService.Sell(ticker, Quantity, UniqueID));
         }
     }
 }

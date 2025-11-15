@@ -24,6 +24,8 @@ namespace TradeActionSystem.Services
         private readonly string _queueName;
         private readonly string _hostName;
         private readonly HashSet<string> _allowedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Buy", "Sell" };
+        //The ProcessedIds would be stored in the db, but we are using this in memory collection to simulate the db
+        private readonly HashSet<string> _processedIds = new HashSet<string>();
         public ConcurrentDictionary<string, decimal> Prices
         {
             get { return _prices; }
@@ -32,6 +34,10 @@ namespace TradeActionSystem.Services
         public HashSet<string> AllowedActions
         { 
             get => _allowedActions;
+        }
+        public HashSet<string> ProcessedIds
+        {
+            get => _processedIds;
         }
         public string HostName
         {
@@ -69,13 +75,14 @@ namespace TradeActionSystem.Services
 
             return true;
         }
-        public bool Buy(string Ticker, int Quantity)
+        public bool Buy(string Ticker, int Quantity, string UniqueID)
         {
             if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
             if (Prices.TryGetValue(Ticker, out var price))
             {
                 _logger.LogInformation($"Buy {Quantity} of {Ticker} at Price {price}");
                 //Execute the Trade
+                ProcessedIds.Add(UniqueID);
                 return true;
             }
             else
@@ -84,13 +91,14 @@ namespace TradeActionSystem.Services
                 return false;
             }
         }
-        public bool Sell(string Ticker, int Quantity)
+        public bool Sell(string Ticker, int Quantity, string UniqueID)
         {
             if (!Validate(Ticker, Quantity, nameof(Sell))) return false;
             if (Prices.TryGetValue(Ticker, out var price))
             {
                 _logger.LogInformation($"Sell {Quantity} of {Ticker} at Price {price}");
                 //Execute the Trade
+                ProcessedIds.Add(UniqueID);
                 return true;
             }
             else
@@ -112,11 +120,11 @@ namespace TradeActionSystem.Services
         {
             if (message.Action == "Buy")
             {
-                return Buy(message.Ticker, message.Quantity);
+                return Buy(message.Ticker, message.Quantity, message.UniqueID);
             }
             else if (message.Action == "Sell")
             {
-                return Sell(message.Ticker, message.Quantity);
+                return Sell(message.Ticker, message.Quantity, message.UniqueID);
             }
             return false;
         }
@@ -223,6 +231,11 @@ namespace TradeActionSystem.Services
                 {
                     tradeExecuted = false;
                     requeue = false;
+                }
+                else if (ProcessedIds.Contains(message.UniqueID))
+                {
+                    _logger.LogInformation($"Message already processed with UniqueID : {message.UniqueID}");
+                    tradeExecuted = true;
                 }
                 else
                 {
