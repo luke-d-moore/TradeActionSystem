@@ -83,7 +83,6 @@ namespace TradeActionServiceTests
         public async Task GetPrices_ApiReturnsErrorStatusCode_ThrowsHttpRequestException()
         {
             // Arrange
-            var exceptionType = typeof(HttpRequestException);
             var mockResponseContent = JsonSerializer.Serialize(new GetPriceResponse(true, "", new Dictionary<string, decimal>()));
             var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -96,7 +95,7 @@ namespace TradeActionServiceTests
                 SetupFactory(httpResponse, true)
             );
             // Act and Assert
-            var result = await Assert.ThrowsAsync(exceptionType, () => pricingService.GetPrices());
+            var result = await Assert.ThrowsAsync<HttpRequestException>(async () => await pricingService.GetPrices());
         }
 
         [Theory]
@@ -117,9 +116,8 @@ namespace TradeActionServiceTests
                 SetupFactory(httpResponse)
             );
 
-            var exceptionType = typeof(JsonException);
             // Act and Assert
-            var result = await Assert.ThrowsAsync(exceptionType, () => pricingService.GetPrices());
+            var result = await Assert.ThrowsAsync<JsonException>(async () => await pricingService.GetPrices());
         }
 
         [Fact]
@@ -132,15 +130,13 @@ namespace TradeActionServiceTests
                 Content = new StringContent(mockResponseContent, System.Text.Encoding.UTF8, "application/json")
             };
 
-            var exceptionType = typeof(Exception);
-
             var pricingService = new PricingService(
                 _priceLogger.Object,
                 _configuration.Object,
                 SetupFactory(httpResponse, true, true)
             );
             // Act and Assert
-            var result = await Assert.ThrowsAsync(exceptionType, () => pricingService.GetPrices());
+            var result = await Assert.ThrowsAsync<Exception>(async () => await pricingService.GetPrices());
         }
     }
 }
