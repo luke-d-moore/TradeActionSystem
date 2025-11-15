@@ -123,7 +123,7 @@ namespace TradeActionServiceTests
         }
 
         [Fact]
-        public async Task GetPrices_ApiReturnsJsonWithoutPriceValue_ThrowsException()
+        public async Task GetPrices_ApiThrowsException_ThrowsException()
         {
             // Arrange
             var mockResponseContent = JsonSerializer.Serialize(new GetPriceResponse(true, "", new Dictionary<string, decimal>()));
