@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using System.Diagnostics;
 using System.Xml;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace TradeActionSystem.Services
 {
@@ -75,19 +76,27 @@ namespace TradeActionSystem.Services
 
             return true;
         }
+        private string GetSuccessLogString(string ticker, int quantity, decimal price, string uniqueID, string action)
+        {
+            return $"{action} {quantity} of {ticker} at Price : {price}, UniqueID : {uniqueID}";
+        }
+        private string GetFailLogString(string ticker, string action, string uniqueID)
+        {
+            return $"Failed attempt to {action}, Ticker was : {ticker}, UniqueID : {uniqueID}";
+        }
         public bool Buy(string Ticker, int Quantity, string UniqueID)
         {
             if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
             if (Prices.TryGetValue(Ticker, out var price))
             {
-                _logger.LogInformation($"Buy {Quantity} of {Ticker} at Price {price}");
+                _logger.LogInformation(GetSuccessLogString(Ticker, Quantity, price, UniqueID, nameof(Buy)));
                 //Execute the Trade
                 ProcessedIds.Add(UniqueID);
                 return true;
             }
             else
             {
-                _logger.LogError($"Failed attempt to {nameof(Buy)}, Ticker was : {Ticker}");
+                _logger.LogError(GetFailLogString(Ticker, nameof(Buy), UniqueID));
                 return false;
             }
         }
@@ -96,14 +105,14 @@ namespace TradeActionSystem.Services
             if (!Validate(Ticker, Quantity, nameof(Sell))) return false;
             if (Prices.TryGetValue(Ticker, out var price))
             {
-                _logger.LogInformation($"Sell {Quantity} of {Ticker} at Price {price}");
+                _logger.LogInformation(GetSuccessLogString(Ticker, Quantity, price, UniqueID, nameof(Sell)));
                 //Execute the Trade
                 ProcessedIds.Add(UniqueID);
                 return true;
             }
             else
             {
-                _logger.LogError($"Failed attempt to {nameof(Sell)}, Ticker was : {Ticker}");
+                _logger.LogError(GetFailLogString(Ticker, nameof(Sell), UniqueID));
                 return false;
             }
         }
