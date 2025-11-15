@@ -53,17 +53,15 @@ namespace TradeActionServiceTests
         public void Buy_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity, string UniqueID)
         {
             // Arrange
-            var exceptionType = typeof(ArgumentException);
             // Act and Assert
-            Assert.Throws(exceptionType, () => _tradeActionService.Buy(ticker, Quantity, UniqueID));
+            Assert.Throws<ArgumentException>(() => _tradeActionService.Buy(ticker, Quantity, UniqueID));
         }
         [Theory, MemberData(nameof(InvalidData))]
         public void Sell_InValidArgumentInputs_ThrowsArgumentException(string ticker, int Quantity, string UniqueID)
         {
             // Arrange
-            var exceptionType = typeof(ArgumentException);
             // Act and Assert
-            Assert.Throws(exceptionType, () => _tradeActionService.Sell(ticker, Quantity, UniqueID));
+            Assert.Throws<ArgumentException>(() => _tradeActionService.Sell(ticker, Quantity, UniqueID));
         }
     }
 }
