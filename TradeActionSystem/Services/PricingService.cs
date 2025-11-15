@@ -11,16 +11,19 @@ namespace TradeActionSystem.Services
         private readonly ILogger<PricingService> _logger;
         private IConfiguration _configuration;
         private string _baseURL;
-        private HttpClient _client = new HttpClient();
+        private IHttpClientFactory _httpClientFactory;
+        private HttpClient _client;
         public string BaseURL
         {
             get { return _baseURL; }
         }
-        public PricingService(ILogger<PricingService> logger, IConfiguration configuration) 
+        public PricingService(ILogger<PricingService> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory) 
         { 
             _logger = logger;
             _configuration = configuration;
             _baseURL = _configuration["PricingSystemBaseURL"];
+            _httpClientFactory = httpClientFactory;
+            _client = _httpClientFactory.CreateClient();
         }
         public async Task<IDictionary<string, decimal>> GetPrices()
         {

@@ -17,6 +17,8 @@ builder.Services.AddSingleton<ITradeActionService, TradeActionService>();
 builder.Services.AddHostedService(p => p.GetRequiredService<ITradeActionService>());
 builder.Services.AddSingleton<IPricingService, PricingService>();
 
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 app.Run();
