@@ -60,7 +60,7 @@ namespace TradeActionServiceTests
             return mockHttpClientFactory.Object;
         }
         [Fact]
-        public async Task GetPriceFromTicker_GivenValidTicker_ReturnsPriceSuccessfully()
+        public async Task GetPrices_ReturnsPriceSuccessfully()
         {
             // Arrange
             var mockResponseContent = JsonSerializer.Serialize(new GetPriceResponse(true, "", new Dictionary<string, decimal>()));
@@ -80,7 +80,7 @@ namespace TradeActionServiceTests
         }
 
         [Fact]
-        public async Task GetPriceFromTicker_ApiReturnsErrorStatusCode_ThrowsHttpRequestException()
+        public async Task GetPrices_ApiReturnsErrorStatusCode_ThrowsHttpRequestException()
         {
             // Arrange
             var exceptionType = typeof(HttpRequestException);
@@ -102,7 +102,7 @@ namespace TradeActionServiceTests
         [Theory]
         [InlineData("")]
         [InlineData(" ")]
-        public async Task GetPriceFromTicker_ApiReturnsMalformedJson_ThrowsJsonException(string response)
+        public async Task GetPrices_ApiReturnsMalformedJson_ThrowsJsonException(string response)
         {
             // Arrange
             var mockResponseContent = response;
@@ -123,7 +123,7 @@ namespace TradeActionServiceTests
         }
 
         [Fact]
-        public async Task GetPriceFromTicker_ApiReturnsJsonWithoutPriceValue_ThrowsException()
+        public async Task GetPrices_ApiReturnsJsonWithoutPriceValue_ThrowsException()
         {
             // Arrange
             var mockResponseContent = JsonSerializer.Serialize(new GetPriceResponse(true, "", new Dictionary<string, decimal>()));
