@@ -1,276 +1,38 @@
-﻿using System.Collections.Concurrent;
-using System.Globalization;
-using TradeActionSystem.Interfaces;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using System.Text;
-using TradeActionSystem.Dtos;
-using System.Text.Json;
-using System.Threading.Channels;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using System.Diagnostics;
-using System.Xml;
-using System;
-using Microsoft.Extensions.Logging;
+﻿using TradeActionSystem.Interfaces;
 
 namespace TradeActionSystem.Services
 {
     public class TradeActionService : TradeActionServiceBase, ITradeActionService
     {
         private readonly ILogger<TradeActionService> _logger;
+        private readonly IMessageConsumerService _messageConsumerService;
         private IPricingService _pricingService;
-        private ConcurrentDictionary<string,decimal> _prices = new ConcurrentDictionary<string, decimal>();
-        private const int _checkRate = 5000;
-        private const int _networkRecoveryInterval = 10;
-        private readonly string _queueName;
-        private readonly string _hostName;
-        private readonly HashSet<string> _allowedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Buy", "Sell" };
-        //The ProcessedIds would be stored in the db, but we are using this in memory collection to simulate the db
-        private readonly HashSet<string> _processedIds = new HashSet<string>();
-        public ConcurrentDictionary<string, decimal> Prices
-        {
-            get { return _prices; }
-            set { _prices = value; }
-        }
-        public HashSet<string> AllowedActions
-        { 
-            get => _allowedActions;
-        }
-        public HashSet<string> ProcessedIds
-        {
-            get => _processedIds;
-        }
-        public string HostName
-        {
-            get => _hostName;
-        }
-        public string QueueName
-        {
-            get => _queueName;
-        }
-        public TradeActionService(ILogger<TradeActionService> logger, IPricingService pricingService, IConfiguration configuration) 
+        private const int _delay = 5000;
+
+        public TradeActionService(
+            ILogger<TradeActionService> logger, 
+            IMessageConsumerService messageConsumerService,
+            IPricingService pricingService) 
             : base(logger)
         {
             _logger = logger;
+            _messageConsumerService = messageConsumerService;
             _pricingService = pricingService;
-            _queueName = configuration["RabbitMQQueue"];
-            _hostName = configuration["ConnectionHostName"];
-
-        }
-        private async Task<IDictionary<string, decimal>> GetPrices()
-        {
-            return (await _pricingService.GetPrices().ConfigureAwait(false));
-        }
-        private bool Validate(string Ticker, int Quantity, string Action)
-        {
-            if (!Prices.Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
-            {
-                _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
-                throw new ArgumentException("Invalid Ticker", "ticker");
-            }
-            if (Quantity <= 0)
-            {
-                _logger.LogError($"Invalid Quantity : {Quantity}, Action : {Action}");
-                throw new ArgumentException("Quantity must be greater than 0.", "quantity");
-            }
-
-            return true;
-        }
-        private string GetSuccessLogString(string ticker, int quantity, decimal price, string uniqueID, string action)
-        {
-            return $"{action} {quantity} of {ticker} at Price : {price}, UniqueID : {uniqueID}";
-        }
-        private string GetFailLogString(string ticker, string action, string uniqueID)
-        {
-            return $"Failed attempt to {action}, Ticker was : {ticker}, UniqueID : {uniqueID}";
-        }
-        public bool Buy(string Ticker, int Quantity, string UniqueID)
-        {
-            if (!Validate(Ticker, Quantity, nameof(Buy))) return false;
-            if (Prices.TryGetValue(Ticker, out var price))
-            {
-                _logger.LogInformation(GetSuccessLogString(Ticker, Quantity, price, UniqueID, nameof(Buy)));
-                //Execute the Trade
-                ProcessedIds.Add(UniqueID);
-                return true;
-            }
-            else
-            {
-                _logger.LogError(GetFailLogString(Ticker, nameof(Buy), UniqueID));
-                return false;
-            }
-        }
-        public bool Sell(string Ticker, int Quantity, string UniqueID)
-        {
-            if (!Validate(Ticker, Quantity, nameof(Sell))) return false;
-            if (Prices.TryGetValue(Ticker, out var price))
-            {
-                _logger.LogInformation(GetSuccessLogString(Ticker, Quantity, price, UniqueID, nameof(Sell)));
-                //Execute the Trade
-                ProcessedIds.Add(UniqueID);
-                return true;
-            }
-            else
-            {
-                _logger.LogError(GetFailLogString(Ticker, nameof(Sell), UniqueID));
-                return false;
-            }
-        }
-
-        private Task SetPrices(IDictionary<string, decimal> prices)
-        {
-            foreach(var price in prices)
-            {
-                Prices[price.Key] = price.Value;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private bool ExecuteTrade(Message message)
-        {
-            if (message.Action == "Buy")
-            {
-                return Buy(message.Ticker, message.Quantity, message.UniqueID);
-            }
-            else if (message.Action == "Sell")
-            {
-                return Sell(message.Ticker, message.Quantity, message.UniqueID);
-            }
-            return false;
         }
 
         protected override async Task CheckMessages(CancellationToken cancellationToken)
         {
-            var priceUpdateTask = PriceUpdateAsync(cancellationToken);
-
-            var messageProcessingTask = ProcessMessagesAsync(cancellationToken);
-
-            await Task.WhenAll(messageProcessingTask, priceUpdateTask).ConfigureAwait(false);
-        }
-
-        private async Task PriceUpdateAsync(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
+            while(!cancellationToken.IsCancellationRequested)
             {
-                try
+                if (!_pricingService.GetLatestPrices().Any())
                 {
-                    var prices = await GetPrices().ConfigureAwait(false);
-                    await SetPrices(prices).ConfigureAwait(false);
-
-                    _logger.LogInformation($"Prices updated successfully");
+                    _logger.LogInformation("Waiting for Prices before starting the consumer");
+                    await Task.Delay(_delay);
+                    continue;
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to get and set prices.");
-                }
+                var messageProcessingTask = _messageConsumerService.StartConsumingAsync(cancellationToken);
 
-                await Task.Delay(_checkRate, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        private async Task ProcessMessagesAsync(CancellationToken cancellationToken)
-        {
-            var factory = new ConnectionFactory { 
-                HostName = HostName, 
-                AutomaticRecoveryEnabled = true, 
-                NetworkRecoveryInterval = TimeSpan.FromSeconds(_networkRecoveryInterval) };
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (!Prices.Any()) continue; //prevent messages being picked up before currentprices have been retrieved
-                try
-                {
-                    using var connection = await factory.CreateConnectionAsync().ConfigureAwait(false);
-                    using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
-
-                    await channel.BasicQosAsync(0, 1, false);
-                    //Only send one message at a time.
-                    //Do not send me the next message until I explicitly acknowledge that I have finished processing the previous one.
-
-                    var consumer = new AsyncEventingBasicConsumer(channel);
-
-                    var processCompletionSource = new TaskCompletionSource<bool>();
-
-                    cancellationToken.Register(() => processCompletionSource.SetResult(true));
-
-                    consumer.ReceivedAsync += async (model, eventArgs) => await ProcessMessage(eventArgs, channel);
-
-                    var consumerTag = await channel.BasicConsumeAsync(
-                        queue: QueueName,
-                        autoAck: false,
-                        consumer: consumer);
-
-                    _logger.LogInformation("Consumer started");
-
-                    // Await the TaskCompletionSource task. This task finishes ONLY when
-                    // cancellationToken.IsCancellationRequested becomes true.
-                    await processCompletionSource.Task.ConfigureAwait(false);
-
-                    _logger.LogInformation("Consumer stopped");
-
-                    if (consumerTag != null && connection.IsOpen)
-                    {
-                        _logger.LogInformation($"Cancel consumer {consumerTag}");
-                        await channel.BasicCancelAsync(consumerTag).ConfigureAwait(false);
-                    }
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Failed to connect to RabbitMQ. Retrying in {_networkRecoveryInterval} seconds");
-                    await Task.Delay(TimeSpan.FromSeconds(_networkRecoveryInterval), cancellationToken).ConfigureAwait(false);
-                }
-            }
-        }
-
-        private async Task ProcessMessage(BasicDeliverEventArgs ea, IChannel channel)
-        {
-            var deliveryTag = ea.DeliveryTag;
-            string jsonmessage = string.Empty;
-            try
-            {
-                var body = ea.Body.ToArray();
-                jsonmessage = Encoding.UTF8.GetString(body);
-
-                _logger.LogInformation($"Processing message: {jsonmessage}");
-
-                var message = JsonSerializer.Deserialize<Message>(jsonmessage);
-
-                bool tradeExecuted = false;
-                bool requeue = true;
-
-                if (message == null || !AllowedActions.Contains(message.Action))
-                {
-                    tradeExecuted = false;
-                    requeue = false;
-                }
-                else if (ProcessedIds.Contains(message.UniqueID))
-                {
-                    _logger.LogInformation($"Message already processed with UniqueID : {message.UniqueID}");
-                    tradeExecuted = true;
-                }
-                else
-                {
-                    tradeExecuted = ExecuteTrade(message);
-                }
-
-                if (tradeExecuted)
-                {
-                    await channel.BasicAckAsync(deliveryTag, multiple: false);
-                    _logger.LogInformation($"Message acknowledged successfully");
-                }
-                else
-                {
-                    _logger.LogError($"Trade execution failed for message : {jsonmessage}. Nack message requeue : {requeue}");
-                    await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: requeue);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Failed to process message: {jsonmessage}. Nack message without requeue");
-                // If deserialization fails, we Nack without requeueing (potentially dead-lettering)
-                await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: false);
+                await messageProcessingTask.ConfigureAwait(false);
             }
         }
 

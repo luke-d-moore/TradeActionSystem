@@ -1,23 +1,32 @@
 ﻿using Serilog;
 using System;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using TradeActionSystem.Interfaces;
 
 namespace TradeActionSystem.Services
 {
-    public class PricingService : IPricingService
+    public class PricingService : PricingServiceBase, IPricingService
     {
         private readonly ILogger<PricingService> _logger;
         private IConfiguration _configuration;
         private string _baseURL;
         private IHttpClientFactory _httpClientFactory;
         private HttpClient _client;
+        private const int _checkRate = 5000;
+        private ConcurrentDictionary<string, decimal> _prices = new ConcurrentDictionary<string, decimal>();
         public string BaseURL
         {
             get { return _baseURL; }
         }
-        public PricingService(ILogger<PricingService> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory) 
+        public ConcurrentDictionary<string, decimal> Prices
+        {
+            get { return _prices; }
+            set { _prices = value; }
+        }
+        public PricingService(ILogger<PricingService> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+            : base(logger, _checkRate)
         { 
             _logger = logger;
             _configuration = configuration;
@@ -63,6 +72,26 @@ namespace TradeActionSystem.Services
                 _logger.LogError(ex, "An unexpected error occurred while getting all prices.");
                 throw;
             }
+        }
+        private Task SetPrices(IDictionary<string, decimal> prices)
+        {
+            foreach (var price in prices)
+            {
+                Prices[price.Key] = price.Value;
+            }
+
+            return Task.CompletedTask;
+        }
+        protected override async Task UpdatePrices(CancellationToken cancellationToken)
+        {
+            var prices = await GetPrices().ConfigureAwait(false);
+
+            await SetPrices(prices).ConfigureAwait(false);
+        }
+
+        public IDictionary<string, decimal> GetLatestPrices()
+        {
+            return Prices;
         }
     }
 }

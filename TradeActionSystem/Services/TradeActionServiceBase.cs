@@ -14,7 +14,7 @@
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Trade Action Service is starting.");
-            
+
             await CheckMessages(cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Trade Action Service is stopping.");
