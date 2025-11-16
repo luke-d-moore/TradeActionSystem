@@ -117,12 +117,14 @@ namespace TradeActionSystem.Services
             }
         }
 
-        private async Task SetPrices(IDictionary<string, decimal> prices)
+        private Task SetPrices(IDictionary<string, decimal> prices)
         {
             foreach(var price in prices)
             {
                 Prices[price.Key] = price.Value;
             }
+
+            return Task.CompletedTask;
         }
 
         private bool ExecuteTrade(Message message)
@@ -153,7 +155,9 @@ namespace TradeActionSystem.Services
             {
                 try
                 {
-                    await SetPrices(await GetPrices().ConfigureAwait(false)).ConfigureAwait(false);
+                    var prices = await GetPrices().ConfigureAwait(false);
+                    await SetPrices(prices).ConfigureAwait(false);
+
                     _logger.LogInformation($"Prices updated successfully");
                 }
                 catch (Exception ex)
