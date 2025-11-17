@@ -35,7 +35,7 @@ namespace TradeActionSystem.Services
             if(!AllowedActions.Contains(Action)) 
             {
                 _logger.LogError($"Invalid Action : {Action}");
-                throw new ArgumentException("Invalid Action", "Action");
+                throw new ArgumentException($"Invalid Action : {Action}", "Action");
             }
             if (Quantity <= 0)
             {
@@ -45,7 +45,7 @@ namespace TradeActionSystem.Services
             if (!GetPrices().Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
             {
                 _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
-                throw new ArgumentException("Invalid Ticker", "ticker");
+                throw new ArgumentException($"Invalid Ticker : {Ticker}", "ticker");
             }
             if (ProcessedIds.Contains(UniqueID))
             {
