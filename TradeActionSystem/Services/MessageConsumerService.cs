@@ -56,7 +56,7 @@ namespace TradeActionSystem.Services
 
                     consumer.ReceivedAsync += async (model, eventArgs) =>
                     {
-                        await HandleReceivedMessage(eventArgs, channel);
+                        await HandleReceivedMessage(eventArgs.DeliveryTag, eventArgs.Body.ToArray(), channel);
                     };
 
                     var consumerTag = await channel.BasicConsumeAsync(
@@ -91,11 +91,9 @@ namespace TradeActionSystem.Services
                 }
             }
         }
-        private async Task HandleReceivedMessage(BasicDeliverEventArgs ea, IChannel channel)
+        private async Task HandleReceivedMessage(ulong deliveryTag, byte[] bytes, IChannel channel)
         {
-            var deliveryTag = ea.DeliveryTag;
-            var body = ea.Body.ToArray();
-            string jsonMessage = Encoding.UTF8.GetString(body);
+            string jsonMessage = Encoding.UTF8.GetString(bytes);
             bool requeueOnFailure = false;
 
             try
@@ -104,7 +102,7 @@ namespace TradeActionSystem.Services
 
                 if (success)
                 {
-                    await channel.BasicAckAsync(deliveryTag, multiple: false);
+                    await channel.BasicAckAsync(deliveryTag, false);
                     _logger.LogInformation("Message acknowledged successfully.");
                 }
                 else

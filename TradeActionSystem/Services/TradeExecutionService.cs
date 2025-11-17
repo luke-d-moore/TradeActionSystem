@@ -1,13 +1,4 @@
-﻿using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using Serilog;
-using System;
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Channels;
-using System.Xml;
-using TradeActionSystem.Dtos;
+﻿using TradeActionSystem.Dtos;
 using TradeActionSystem.Interfaces;
 
 namespace TradeActionSystem.Services
