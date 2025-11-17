@@ -4,6 +4,7 @@ using Moq;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
+using System.Threading;
 using TradeActionSystem.Interfaces;
 using TradeActionSystem.Services;
 
@@ -105,6 +106,32 @@ namespace TradeActionServiceTests
                 Times.Once);
 
             _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+        [Fact]
+        public async Task PublishMessage_WhenCancellationTokenIsCancelledDuringConnection_ThrowsOperationCanceledException()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            _mockConnectionFactory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>()))
+                .Returns(async (CancellationToken ct) =>
+                {
+                    await Task.Delay(2000, ct);
+                    return _mockConnection.Object;
+                });
+
+            cts.CancelAfter(500);
+
+            // Act and Assert
+            await _service.StartConsumingAsync(cts.Token);
+
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Message consumption cancelled")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Once);
         }
         private async Task InvokeHandleReceivedMessage(ulong deliveryTag, byte[] bytes, IChannel channel)
         {

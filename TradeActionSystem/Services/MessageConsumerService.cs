@@ -41,8 +41,8 @@ namespace TradeActionSystem.Services
             {
                 try
                 {
-                    using var connection = await _connectionFactory.CreateConnectionAsync().ConfigureAwait(false);
-                    using var channel = await connection.CreateChannelAsync().ConfigureAwait(false);
+                    using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken).ConfigureAwait(false);
+                    using var channel = await connection.CreateChannelAsync(null,cancellationToken).ConfigureAwait(false);
 
                     await channel.BasicQosAsync(0, 1, false);
                     //Only send one message at a time.
@@ -79,9 +79,9 @@ namespace TradeActionSystem.Services
                     }
                     break;
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogInformation("Message consumption cancelled.");
+                    _logger.LogError("Message consumption cancelled.");
                     break;
                 }
                 catch (Exception ex)
