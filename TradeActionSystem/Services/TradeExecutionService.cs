@@ -8,6 +8,11 @@ namespace TradeActionSystem.Services
         private readonly ILogger<TradeExecutionService> _logger;
         private ITradeExecutionService _tradeExecutionService;
         private IPricingService _pricingService;
+        private readonly HashSet<string> _allowedActions = new HashSet<string>() { "Buy", "Sell"};
+        public HashSet<string> AllowedActions
+        {
+            get => _allowedActions;
+        }
         //The ProcessedIds would be stored in the db, but we are using this in memory collection to simulate the db
         private readonly HashSet<string> _processedIds = new HashSet<string>();
         public HashSet<string> ProcessedIds
@@ -27,15 +32,20 @@ namespace TradeActionSystem.Services
         }
         private bool Validate(string Ticker, int Quantity, string Action, string UniqueID)
         {
-            if (!GetPrices().Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
+            if(!AllowedActions.Contains(Action)) 
             {
-                _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
-                throw new ArgumentException("Invalid Ticker", "ticker");
+                _logger.LogError($"Invalid Action : {Action}");
+                throw new ArgumentException("Invalid Action", "Action");
             }
             if (Quantity <= 0)
             {
                 _logger.LogError($"Invalid Quantity : {Quantity}, Action : {Action}");
                 throw new ArgumentException("Quantity must be greater than 0.", "quantity");
+            }
+            if (!GetPrices().Keys.Contains(Ticker, StringComparer.OrdinalIgnoreCase))
+            {
+                _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
+                throw new ArgumentException("Invalid Ticker", "ticker");
             }
             if (ProcessedIds.Contains(UniqueID))
             {
@@ -55,7 +65,6 @@ namespace TradeActionSystem.Services
         }
         public bool Buy(string Ticker, int Quantity, string UniqueID)
         {
-            if (!Validate(Ticker, Quantity, nameof(Buy), UniqueID)) return false;
             if (GetPrices().TryGetValue(Ticker, out var price))
             {
                 _logger.LogInformation(GetSuccessLogString(Ticker, Quantity, price, UniqueID, nameof(Buy)));
@@ -71,7 +80,6 @@ namespace TradeActionSystem.Services
         }
         public bool Sell(string Ticker, int Quantity, string UniqueID)
         {
-            if (!Validate(Ticker, Quantity, nameof(Sell), UniqueID)) return false;
             if (GetPrices().TryGetValue(Ticker, out var price))
             {
                 _logger.LogInformation(GetSuccessLogString(Ticker, Quantity, price, UniqueID, nameof(Sell)));
@@ -87,20 +95,22 @@ namespace TradeActionSystem.Services
         }
         public bool ExecuteTrade(Message message)
         {
-            if (message.Action == "Buy")
+            if (!Validate(message.Ticker, message.Quantity, message.Action, message.UniqueID))
             {
-                return Buy(message.Ticker, message.Quantity, message.UniqueID);
-            }
-            else if (message.Action == "Sell")
-            {
-                return Sell(message.Ticker, message.Quantity, message.UniqueID);
+                _logger.LogError(GetFailLogString(message.Ticker, message.Action, message.UniqueID));
             }
             else
             {
-                _logger.LogError($"Invalid Action : {message.Action}");
-                _logger.LogError(GetFailLogString(message.Ticker, message.Action, message.UniqueID));
-                return false;
+                if (message.Action == "Buy")
+                {
+                    return Buy(message.Ticker, message.Quantity, message.UniqueID);
+                }
+                else if (message.Action == "Sell")
+                {
+                    return Sell(message.Ticker, message.Quantity, message.UniqueID);
+                }
             }
+            return false;
         }
     }
 }

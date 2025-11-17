@@ -87,7 +87,7 @@ namespace TradeActionServiceTests
             // Arrange
             var message = new Message() { Ticker = "IBM", Action = "Sell123", Quantity = 5, UniqueID = "abc" };
             // Act and Assert
-            Assert.False(_tradeExecutionService.ExecuteTrade(message));
+            Assert.Throws<ArgumentException>(() => _tradeExecutionService.ExecuteTrade(message));
             _tradeExecutionLogger.Verify(
             x => x.Log(
                 LogLevel.Error,
