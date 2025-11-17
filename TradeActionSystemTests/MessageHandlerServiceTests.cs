@@ -88,7 +88,6 @@ namespace TradeActionServiceTests
             // Assert
             Assert.False(result);
             _mockTradeExecutionService.Verify(s => s.ExecuteTrade(It.IsAny<Message>()), Times.Once);
-            // Verify no error logs, only information logs are present
             _mockLogger.Verify(
                 l => l.Log(
                     LogLevel.Error,
