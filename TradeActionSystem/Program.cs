@@ -6,6 +6,8 @@ using RabbitMQ.Client;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
+builder.AddServiceDefaults();
+
 var configurationBuilder = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 var configuration = configurationBuilder.Build();

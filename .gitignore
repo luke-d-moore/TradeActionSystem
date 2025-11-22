@@ -4,3 +4,7 @@
 /TradeActionSystem/logs
 /TradeActionSystemTests/bin
 /TradeActionSystemTests/obj
+/TradeActionSystem.AppHost/bin
+/TradeActionSystem.AppHost/obj
+/TradeActionSystem.ServiceDefaults/bin
+/TradeActionSystem.ServiceDefaults/obj
