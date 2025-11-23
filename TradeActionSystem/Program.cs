@@ -8,6 +8,8 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddRabbitMQClient("my-rabbit");
+
 var configurationBuilder = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 var configuration = configurationBuilder.Build();

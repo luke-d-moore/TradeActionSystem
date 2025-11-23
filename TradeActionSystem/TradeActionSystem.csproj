@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.RabbitMQ.Client" Version="13.0.0" />
     <PackageReference Include="Common.Logging" Version="3.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
