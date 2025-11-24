@@ -7,7 +7,7 @@ namespace TradeActionSystem.Services
         private readonly ILogger<TradeActionService> _logger;
         private readonly IMessageConsumerService _messageConsumerService;
         private IPricingService _pricingService;
-        private const int _delay = 5000;
+        private const int _delay = 500;
 
         public TradeActionService(
             ILogger<TradeActionService> logger, 
