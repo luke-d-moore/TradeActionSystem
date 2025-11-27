@@ -1,7 +1,4 @@
-﻿using Serilog;
-using System;
-using System.Collections.Concurrent;
-using System.Globalization;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using TradeActionSystem.Interfaces;
 
@@ -78,6 +75,13 @@ namespace TradeActionSystem.Services
             foreach (var price in prices)
             {
                 Prices[price.Key] = price.Value;
+            }
+
+            var keysToRemove = Prices.Keys.Except(prices.Keys);
+
+            foreach (var key in keysToRemove)
+            {
+                Prices.TryRemove(key, out var price);
             }
 
             return Task.CompletedTask;
