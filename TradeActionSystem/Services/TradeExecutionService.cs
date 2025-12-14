@@ -6,7 +6,6 @@ namespace TradeActionSystem.Services
     public class TradeExecutionService : ITradeExecutionService
     {
         private readonly ILogger<TradeExecutionService> _logger;
-        private ITradeExecutionService _tradeExecutionService;
         private IPricingService _pricingService;
         private readonly HashSet<string> _allowedActions = new HashSet<string>() { "Buy", "Sell"};
         public HashSet<string> AllowedActions

@@ -12,6 +12,8 @@ namespace TradeActionSystem.Services
         private IHttpClientFactory _httpClientFactory;
         private HttpClient _client;
         private const int _checkRate = 5000;
+        private readonly TaskCompletionSource<bool> _initialpriceLoad = new();
+        public Task InitialPriceLoadTask => _initialpriceLoad.Task;
         private ConcurrentDictionary<string, decimal> _prices = new ConcurrentDictionary<string, decimal>();
         public string BaseURL
         {
@@ -91,11 +93,20 @@ namespace TradeActionSystem.Services
             var prices = await GetPrices().ConfigureAwait(false);
 
             await SetPrices(prices).ConfigureAwait(false);
+
+            if (Prices.Any() && !_initialpriceLoad.Task.IsCompleted)
+            {
+                _initialpriceLoad.SetResult(true);
+            }
         }
 
         public IDictionary<string, decimal> GetLatestPrices()
         {
             return Prices;
+        }
+        public Task InitialPricesLoadedTask()
+        {
+            return InitialPriceLoadTask;
         }
     }
 }

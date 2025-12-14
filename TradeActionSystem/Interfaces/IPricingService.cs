@@ -4,5 +4,6 @@
     {
         public IDictionary<string, decimal> GetLatestPrices();
         public Task<IDictionary<string, decimal>> GetPrices();
+        public Task InitialPricesLoadedTask();
     }
 }

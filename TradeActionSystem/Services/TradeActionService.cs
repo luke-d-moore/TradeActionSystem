@@ -7,7 +7,6 @@ namespace TradeActionSystem.Services
         private readonly ILogger<TradeActionService> _logger;
         private readonly IMessageConsumerService _messageConsumerService;
         private IPricingService _pricingService;
-        private const int _delay = 500;
 
         public TradeActionService(
             ILogger<TradeActionService> logger, 
@@ -24,10 +23,11 @@ namespace TradeActionSystem.Services
         {
             while(!cancellationToken.IsCancellationRequested)
             {
+                await _pricingService.InitialPricesLoadedTask();
+
                 if (!_pricingService.GetLatestPrices().Any())
                 {
                     _logger.LogInformation("Waiting for Prices before starting the consumer");
-                    await Task.Delay(_delay);
                     continue;
                 }
                 var messageProcessingTask = _messageConsumerService.StartConsumingAsync(cancellationToken);
