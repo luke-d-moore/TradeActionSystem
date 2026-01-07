@@ -12,6 +12,9 @@
   <ItemGroup>
     <PackageReference Include="Aspire.RabbitMQ.Client" Version="13.0.0" />
     <PackageReference Include="Common.Logging" Version="3.4.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.33.2" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.76.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
@@ -36,6 +39,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TradeActionSystem.ServiceDefaults\TradeActionSystem.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<Protobuf Include="Protos\Pricing.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

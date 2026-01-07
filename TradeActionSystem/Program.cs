@@ -1,8 +1,9 @@
-using TradeActionSystem.Services;
-using Serilog;
-using TradeActionSystem.Logging;
-using TradeActionSystem.Interfaces;
+using PricingSystem.Protos;
 using RabbitMQ.Client;
+using Serilog;
+using TradeActionSystem.Interfaces;
+using TradeActionSystem.Logging;
+using TradeActionSystem.Services;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -44,7 +45,15 @@ builder.Services.AddHostedService(p => p.GetRequiredService<PricingService>());
 builder.Services.AddHostedService(p => p.GetRequiredService<TradeActionService>());
 
 
-builder.Services.AddHttpClient();
+builder.Services.AddGrpcClient<GrpcPricingService.GrpcPricingServiceClient>(o =>
+{
+    o.Address = new Uri(builder.Configuration["PricingSystemBaseURL"]);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback =
+        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+});
 
 var app = builder.Build();
 

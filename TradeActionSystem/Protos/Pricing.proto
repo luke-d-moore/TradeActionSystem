@@ -1,0 +1,14 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "PricingSystem.Protos";
+
+import "google/protobuf/empty.proto";
+
+service GrpcPricingService {
+  rpc GetLatestPrices (google.protobuf.Empty) returns (stream PriceUpdate);
+}
+
+message PriceUpdate {
+  string symbol = 1;
+  double price = 2;
+}

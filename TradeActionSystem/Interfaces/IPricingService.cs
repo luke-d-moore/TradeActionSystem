@@ -3,7 +3,8 @@
     public interface IPricingService : IHostedService
     {
         public IDictionary<string, decimal> GetLatestPrices();
-        public Task<IDictionary<string, decimal>> GetPrices();
+        public decimal GetLatestPriceFromTicker(string Ticker);
+        public IList<string> GetLatestTickers();
         public Task InitialPricesLoadedTask();
     }
 }
