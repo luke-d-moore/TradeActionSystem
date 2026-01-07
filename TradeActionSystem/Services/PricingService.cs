@@ -72,7 +72,7 @@ namespace TradeActionSystem.Services
         }
         public HashSet<string> GetLatestTickers()
         {
-            return Prices.Keys.ToHashSet();
+            return Prices.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
         public Task InitialPricesLoadedTask()

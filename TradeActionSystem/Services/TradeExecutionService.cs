@@ -41,7 +41,7 @@ namespace TradeActionSystem.Services
                 _logger.LogError($"Invalid Quantity : {Quantity}, Action : {Action}");
                 throw new ArgumentException("Quantity must be greater than 0.", "quantity");
             }
-            if (!_pricingService.GetLatestTickers().Contains(Ticker, StringComparer.OrdinalIgnoreCase))
+            if (!_pricingService.GetLatestTickers().Contains(Ticker))
             {
                 _logger.LogError($"Invalid Ticker : {Ticker}, Action : {Action}");
                 throw new ArgumentException($"Invalid Ticker : {Ticker}", "ticker");
