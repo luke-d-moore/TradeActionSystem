@@ -4,7 +4,7 @@
     {
         public IDictionary<string, decimal> GetLatestPrices();
         public decimal GetLatestPriceFromTicker(string Ticker);
-        public IList<string> GetLatestTickers();
+        public HashSet<string> GetLatestTickers();
         public Task InitialPricesLoadedTask();
     }
 }

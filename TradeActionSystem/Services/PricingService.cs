@@ -70,9 +70,9 @@ namespace TradeActionSystem.Services
         {
             return Prices[Ticker];
         }
-        public IList<string> GetLatestTickers()
+        public HashSet<string> GetLatestTickers()
         {
-            return Prices.Keys.ToList();
+            return Prices.Keys.ToHashSet();
         }
 
         public Task InitialPricesLoadedTask()

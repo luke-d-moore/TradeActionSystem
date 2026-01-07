@@ -25,11 +25,6 @@ namespace TradeActionSystem.Services
             {
                 await _pricingService.InitialPricesLoadedTask();
 
-                if (!_pricingService.GetLatestPrices().Any())
-                {
-                    _logger.LogInformation("Waiting for Prices before starting the consumer");
-                    continue;
-                }
                 var messageProcessingTask = _messageConsumerService.StartConsumingAsync(cancellationToken);
 
                 await messageProcessingTask.ConfigureAwait(false);
