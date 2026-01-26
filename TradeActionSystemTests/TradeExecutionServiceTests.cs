@@ -22,6 +22,7 @@ namespace TradeActionServiceTests
             _tradeExecutionLogger = new Mock<ILogger<TradeExecutionService>>();
             _pricingService = new Mock<IPricingService>();
             _pricingService.Setup(x => x.GetLatestPrices()).Returns(new Dictionary<string, decimal>() { { "IBM", 100.0m } });
+            _pricingService.Setup(x => x.GetLatestTickers()).Returns(new HashSet<string>() { "IBM" });
             _tradeExecutionService = new TradeExecutionService(
                 _tradeExecutionLogger.Object,
                 _pricingService.Object);
